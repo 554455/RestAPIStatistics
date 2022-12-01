@@ -22,23 +22,15 @@ public class ScheduledTasks {
     }
 
 
-    @Scheduled(fixedDelay = 1)
+    @Scheduled(initialDelay=0)
     public void getSymbol() {
-
         LOGGER.info("INFO: Getting information ");
         companyService.save();
-
     }
 
-    @Scheduled(cron = "${interval-in-cron}")
+    @Scheduled(initialDelay=5000, cron = "${interval-in-cron}")
     public void getStatistics() {
-
         statisticsService.save();
-
-
-        LOGGER.info("INFO: Changed prices");
-        statisticsService.getChangedPrices();
-
     }
 
     @Scheduled(cron = "${interval-in-out}")
