@@ -29,10 +29,10 @@ public class StatisticsService {
         List<Company> companies = companyService.listAll();
         for (Company company : companies) {
             String urlQuote = "https://sandbox.iexapis.com/stable/stock/" + company.getSymbol() + "/quote?token=Tpk_ee567917a6b640bb8602834c9d30e571";
+
             Statistics statistics = restTemplate
                     .getForObject(urlQuote, Statistics.class);
-
-            statisticsRepository.save(statistics);
+                statisticsRepository.save(statistics);
         }
     }
 
@@ -41,6 +41,7 @@ public class StatisticsService {
                 .stream()
                 .filter(s -> s != null && s.getPreviousVolume() != null)
                 .sorted(Comparator.comparingInt(Statistics::getPreviousVolume).reversed())
+                .limit(4)
                 .collect(Collectors.toList());
     }
 
@@ -49,6 +50,7 @@ public class StatisticsService {
                 .stream()
                 .filter(s -> s != null && s.getLatestPrice() != null)
                 .sorted(Comparator.comparingDouble(Statistics::getLatestPrice).reversed())
+                .limit(4)
                 .collect(Collectors.toList());
     }
 

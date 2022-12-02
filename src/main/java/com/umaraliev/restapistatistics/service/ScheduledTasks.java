@@ -1,13 +1,17 @@
 package com.umaraliev.restapistatistics.service;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+import java.sql.Time;
+import java.time.LocalTime;
 import java.util.logging.Logger;
 
 @Component
-@AutoConfiguration
+@Async
 public class ScheduledTasks {
 
     static final Logger LOGGER = Logger.getLogger(ScheduledTasks.class.getName());
@@ -22,27 +26,38 @@ public class ScheduledTasks {
     }
 
 
-    @Scheduled(initialDelay=0)
+
+    @PostConstruct
+    @Scheduled(cron = "${interval-in-get-symbol}")
     public void getSymbol() {
-        LOGGER.info("INFO: Getting information ");
+        LOGGER.info("INFO: Getting information " + "|" + LocalTime.now());
         companyService.save();
     }
 
-    @Scheduled(initialDelay=5000, cron = "${interval-in-cron}")
+
+    @Scheduled(cron = "${interval-in-get-statistics}")
     public void getStatistics() {
+        LOGGER.info("INFO: Getting statistics " + "|" + LocalTime.now());
         statisticsService.save();
     }
 
-    @Scheduled(cron = "${interval-in-out}")
+
+    @Scheduled(fixedDelay = 5000)
     public void outputExpensiveStocks() {
-        LOGGER.info("INFO: Expensive stocks ");
-        statisticsService.getExpensiveStocks();
+
+        System.out.println("-----------------------------------------------------------------------------------------");
+        statisticsService.getExpensiveStocks().stream().forEach(System.out::println);
+        LOGGER.info("INFO: Expensive stocks " + "|" + LocalTime.now());
+        System.out.println("-----------------------------------------------------------------------------------------");
+
     }
 
-    @Scheduled(cron = "${interval-in-out}")
+    @Scheduled(fixedDelay = 7000)
     public void outputChangedPrices() {
-        LOGGER.info("INFO: Changed prices");
-        statisticsService.getChangedPrices();
+        System.out.println("-----------------------------------------------------------------------------------------");
+        statisticsService.getChangedPrices().stream().forEach(System.out::println);
+        LOGGER.info("INFO: Changed prices " + "|" + LocalTime.now());
+        System.out.println("-----------------------------------------------------------------------------------------");
     }
 
 }
