@@ -44,7 +44,6 @@ public class ScheduledTasks {
 
     @Scheduled(fixedDelay = 5000)
     public void outputExpensiveStocks() {
-
         System.out.println("-----------------------------------------------------------------------------------------");
         statisticsService.getExpensiveStocks().stream().forEach(System.out::println);
         LOGGER.info("INFO: Expensive stocks " + "|" + LocalTime.now());
@@ -52,7 +51,7 @@ public class ScheduledTasks {
 
     }
 
-    @Scheduled(fixedDelay = 7000)
+    @Scheduled(fixedDelay = 5000)
     public void outputChangedPrices() {
         System.out.println("-----------------------------------------------------------------------------------------");
         statisticsService.getChangedPrices().stream().forEach(System.out::println);
