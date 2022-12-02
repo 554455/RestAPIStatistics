@@ -3,6 +3,7 @@ package com.umaraliev.restapistatistics.service;
 import com.umaraliev.restapistatistics.model.Company;
 import com.umaraliev.restapistatistics.model.Statistics;
 import com.umaraliev.restapistatistics.repository.StatisticsRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -25,7 +26,7 @@ public class StatisticsService {
     private RestTemplate restTemplate = new RestTemplate();
 
     public void save() {
-
+        statisticsRepository.deleteAll();
         List<Company> companies = companyService.listAll();
         for (Company company : companies) {
             String urlQuote = "https://sandbox.iexapis.com/stable/stock/" + company.getSymbol() + "/quote?token=Tpk_ee567917a6b640bb8602834c9d30e571";
@@ -41,7 +42,7 @@ public class StatisticsService {
                 .stream()
                 .filter(s -> s != null && s.getPreviousVolume() != null)
                 .sorted(Comparator.comparingInt(Statistics::getPreviousVolume).reversed())
-                .limit(4)
+                .limit(5)
                 .collect(Collectors.toList());
     }
 
@@ -50,7 +51,7 @@ public class StatisticsService {
                 .stream()
                 .filter(s -> s != null && s.getLatestPrice() != null)
                 .sorted(Comparator.comparingDouble(Statistics::getLatestPrice).reversed())
-                .limit(4)
+                .limit(5)
                 .collect(Collectors.toList());
     }
 

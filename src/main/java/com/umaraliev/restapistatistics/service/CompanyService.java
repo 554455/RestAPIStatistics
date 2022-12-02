@@ -24,6 +24,7 @@ public class CompanyService {
 
 
     public void save() {
+        companyRepository.deleteAll();
         String urlSymbols = "https://sandbox.iexapis.com/stable/ref-data/symbols?token=Tpk_ee567917a6b640bb8602834c9d30e571";
 
         ResponseEntity<List<Company>> rateResponse =
