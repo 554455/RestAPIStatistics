@@ -1,47 +1,52 @@
 package com.umaraliev.restapistatistics.service;
 
-import com.umaraliev.restapistatistics.model.Company;
+import com.umaraliev.restapistatistics.model.CompanyEntity;
 import com.umaraliev.restapistatistics.repository.CompanyRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class CompanyService {
 
     private final CompanyRepository companyRepository;
+    private final RestTemplate restTemplate;
 
-    public CompanyService(CompanyRepository companyRepository) {
-        this.companyRepository = companyRepository;
+    ExecutorService fixedPool = Executors.newFixedThreadPool(8);
+
+    public void saveCompanyDetails() {
+
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+            String url = "https://sandbox.iexapis.com/stable/ref-data/symbols?token=Tpk_ee567917a6b640bb8602834c9d30e571";
+            ResponseEntity<List<CompanyEntity>> rateResponse =
+                    restTemplate.exchange(url,
+                            HttpMethod.GET, null, new ParameterizedTypeReference<List<CompanyEntity>>() {});
+
+            List<CompanyEntity> companyList = rateResponse.getBody();
+            if(!CollectionUtils.isEmpty(companyList)) {
+                companyRepository.saveAll(companyList);
+            }
+        }, fixedPool);
     }
 
-    private RestTemplate restTemplate = new RestTemplate();
-
-
-    public void save() {
-        companyRepository.deleteAll();
-        String urlSymbols = "https://sandbox.iexapis.com/stable/ref-data/symbols?token=Tpk_ee567917a6b640bb8602834c9d30e571";
-
-        ResponseEntity<List<Company>> rateResponse =
-                restTemplate.exchange(urlSymbols,
-                        HttpMethod.GET, null, new ParameterizedTypeReference<List<Company>>() {});
-
-        List<Company> companyList = rateResponse.getBody();
-        for (Company company : companyList) {
-            companyRepository.save(company);
-        }
-    }
-
-    public List<Company> listAll() {
+    public List<CompanyEntity> listAll() {
         return companyRepository.findAll()
                 .stream()
                 .filter(c -> c != null && c.getSymbol() != null)
                 .collect(Collectors.toList());
     }
-
 }

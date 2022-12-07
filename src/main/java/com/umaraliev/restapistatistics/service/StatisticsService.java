@@ -1,56 +1,67 @@
 package com.umaraliev.restapistatistics.service;
 
-import com.umaraliev.restapistatistics.model.Company;
-import com.umaraliev.restapistatistics.model.Statistics;
+import com.umaraliev.restapistatistics.model.CompanyEntity;
+import com.umaraliev.restapistatistics.model.StatisticsEntity;
 import com.umaraliev.restapistatistics.repository.StatisticsRepository;
-import org.springframework.data.jpa.repository.Query;
+import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class StatisticsService {
 
     private final StatisticsRepository statisticsRepository;
-
     private final CompanyService companyService;
+    private final RestTemplate restTemplate;
 
-    public StatisticsService(StatisticsRepository statisticsRepository, CompanyService companyService) {
-        this.statisticsRepository = statisticsRepository;
-        this.companyService = companyService;
-    }
+    ExecutorService fixedPool = Executors.newFixedThreadPool(8);
 
-    private RestTemplate restTemplate = new RestTemplate();
+    public void saveStatisticsDetails() {
 
-    public void save() {
-        statisticsRepository.deleteAll();
-        List<Company> companies = companyService.listAll();
-        for (Company company : companies) {
-            String urlQuote = "https://sandbox.iexapis.com/stable/stock/" + company.getSymbol() + "/quote?token=Tpk_ee567917a6b640bb8602834c9d30e571";
+        CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(() -> {
+            statisticsRepository.deleteAll();
+            List<CompanyEntity> companies = companyService.listAll();
+            for (CompanyEntity company : companies) {
+                String urlQuote = "https://sandbox.iexapis.com/stable/stock/" + company.getSymbol() + "/quote?token=Tpk_ee567917a6b640bb8602834c9d30e571";
 
-            Statistics statistics = restTemplate
-                    .getForObject(urlQuote, Statistics.class);
+                StatisticsEntity statistics = restTemplate
+                        .getForObject(urlQuote, StatisticsEntity.class);
                 statisticsRepository.save(statistics);
-        }
+            }
+        }, fixedPool);
+
     }
 
-    public List<Statistics> getExpensiveStocks() {
+    public List<StatisticsEntity> listAll() {
+        return statisticsRepository.findAll()
+                .stream()
+                .filter(s -> s != null)
+                .collect(Collectors.toList());
+    }
+
+    public List<StatisticsEntity> getExpensiveStocks() {
         return statisticsRepository.findAll()
                 .stream()
                 .filter(s -> s != null && s.getPreviousVolume() != null)
-                .sorted(Comparator.comparingInt(Statistics::getPreviousVolume).reversed())
+                .sorted(Comparator.comparingInt(StatisticsEntity::getPreviousVolume).reversed())
                 .limit(5)
                 .collect(Collectors.toList());
     }
 
-    public List<Statistics> getChangedPrices() {
+    public List<StatisticsEntity> getChangedPrices() {
         return statisticsRepository.findAll()
                 .stream()
                 .filter(s -> s != null && s.getLatestPrice() != null)
-                .sorted(Comparator.comparingDouble(Statistics::getLatestPrice).reversed())
+                .sorted(Comparator.comparingDouble(StatisticsEntity::getLatestPrice).reversed())
                 .limit(5)
                 .collect(Collectors.toList());
     }
