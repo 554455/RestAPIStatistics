@@ -4,6 +4,7 @@ import com.umaraliev.restapistatistics.model.CompanyEntity;
 import com.umaraliev.restapistatistics.model.StatisticsEntity;
 import com.umaraliev.restapistatistics.repository.StatisticsRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -23,18 +24,21 @@ public class StatisticsService {
     private final CompanyService companyService;
     private final RestTemplate restTemplate;
 
+    @Value("${iex.api.host.statistics}")
+    private String iexApiHost;
+
+    @Value("${iex.api.key.statistics}")
+    private String iexApiKey;
+
     ExecutorService fixedPool = Executors.newFixedThreadPool(8);
 
     public void saveStatisticsDetails() {
-
         CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(() -> {
             statisticsRepository.deleteAll();
             List<CompanyEntity> companies = companyService.listAll();
             for (CompanyEntity company : companies) {
-                String urlQuote = "https://sandbox.iexapis.com/stable/stock/" + company.getSymbol() + "/quote?token=Tpk_ee567917a6b640bb8602834c9d30e571";
-
                 StatisticsEntity statistics = restTemplate
-                        .getForObject(urlQuote, StatisticsEntity.class);
+                        .getForObject(iexApiHost + company.getSymbol() + iexApiKey, StatisticsEntity.class);
                 statisticsRepository.save(statistics);
             }
         }, fixedPool);
@@ -65,6 +69,4 @@ public class StatisticsService {
                 .limit(5)
                 .collect(Collectors.toList());
     }
-
-
 }

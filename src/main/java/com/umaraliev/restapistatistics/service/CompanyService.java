@@ -26,14 +26,18 @@ public class CompanyService {
     private final CompanyRepository companyRepository;
     private final RestTemplate restTemplate;
 
+    @Value("${iex.api.host}")
+    private String iexApiHost;
+
+    @Value("${iex.api.host}")
+    private String iexApiKey;
+
     ExecutorService fixedPool = Executors.newFixedThreadPool(8);
 
     public void saveCompanyDetails() {
-
         CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-            String url = "https://sandbox.iexapis.com/stable/ref-data/symbols?token=Tpk_ee567917a6b640bb8602834c9d30e571";
             ResponseEntity<List<CompanyEntity>> rateResponse =
-                    restTemplate.exchange(url,
+                    restTemplate.exchange(iexApiHost + iexApiKey,
                             HttpMethod.GET, null, new ParameterizedTypeReference<List<CompanyEntity>>() {});
 
             List<CompanyEntity> companyList = rateResponse.getBody();

@@ -23,8 +23,6 @@ public class ScheduledTasks {
         this.statisticsService = statisticsService;
     }
 
-
-
     @PostConstruct
     @Scheduled(cron = "${interval-in-get-symbol}")
     public void getSymbol() {
@@ -51,7 +49,6 @@ public class ScheduledTasks {
 
     @Scheduled(fixedDelay = 5000)
     public void outputChangedPrices() {
-        System.out.println("-----------------------------------------------------------------------------------------");
         statisticsService.getChangedPrices().stream().forEach(System.out::println);
         LOGGER.info("INFO: Changed prices " + "|" + LocalTime.now());
         System.out.println("-----------------------------------------------------------------------------------------");
