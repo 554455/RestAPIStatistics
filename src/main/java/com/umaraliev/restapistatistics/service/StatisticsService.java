@@ -5,6 +5,9 @@ import com.umaraliev.restapistatistics.model.StatisticsEntity;
 import com.umaraliev.restapistatistics.repository.StatisticsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -34,7 +37,6 @@ public class StatisticsService {
 
     public void saveStatisticsDetails() {
         CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(() -> {
-            statisticsRepository.deleteAll();
             List<CompanyEntity> companies = companyService.listAll();
             for (CompanyEntity company : companies) {
                 StatisticsEntity statistics = restTemplate
@@ -48,7 +50,7 @@ public class StatisticsService {
     public List<StatisticsEntity> listAll() {
         return statisticsRepository.findAll()
                 .stream()
-                .filter(s -> s != null)
+                .filter(s -> s != null && s.getCompanyName() != s.getCompanyName())
                 .collect(Collectors.toList());
     }
 
@@ -69,4 +71,5 @@ public class StatisticsService {
                 .limit(5)
                 .collect(Collectors.toList());
     }
+
 }

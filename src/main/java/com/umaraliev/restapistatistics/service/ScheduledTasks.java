@@ -1,5 +1,6 @@
 package com.umaraliev.restapistatistics.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -10,9 +11,8 @@ import java.util.logging.Logger;
 
 @Component
 @Async
+@Slf4j
 public class ScheduledTasks {
-
-    static final Logger LOGGER = Logger.getLogger(ScheduledTasks.class.getName());
 
     private final CompanyService companyService;
 
@@ -26,23 +26,22 @@ public class ScheduledTasks {
     @PostConstruct
     @Scheduled(cron = "${interval-in-get-symbol}")
     public void getSymbol() {
-        LOGGER.info("INFO: Getting information " + "|" + LocalTime.now());
+        log.info("INFO: Getting information " + "|" + LocalTime.now());
         companyService.saveCompanyDetails();
     }
 
 
     @Scheduled(cron = "${interval-in-get-statistics}")
     public void getStatistics() {
-        LOGGER.info("INFO: Getting statistics " + "|" + LocalTime.now());
+        log.info("INFO: Getting statistics " + "|" + LocalTime.now());
         statisticsService.saveStatisticsDetails();
     }
 
 
     @Scheduled(fixedDelay = 5000)
     public void outputExpensiveStocks() {
-        System.out.println("-----------------------------------------------------------------------------------------");
         statisticsService.getExpensiveStocks().stream().forEach(System.out::println);
-        LOGGER.info("INFO: Expensive stocks " + "|" + LocalTime.now());
+        log.info("INFO: Expensive stocks " + "|" + LocalTime.now());
         System.out.println("-----------------------------------------------------------------------------------------");
 
     }
@@ -50,7 +49,7 @@ public class ScheduledTasks {
     @Scheduled(fixedDelay = 5000)
     public void outputChangedPrices() {
         statisticsService.getChangedPrices().stream().forEach(System.out::println);
-        LOGGER.info("INFO: Changed prices " + "|" + LocalTime.now());
+        log.info("INFO: Changed prices " + "|" + LocalTime.now());
         System.out.println("-----------------------------------------------------------------------------------------");
     }
 
