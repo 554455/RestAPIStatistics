@@ -12,7 +12,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -38,11 +40,13 @@ public class StatisticsService {
     public void saveStatisticsDetails() {
         CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(() -> {
             List<CompanyEntity> companies = companyService.listAll();
+            List<StatisticsEntity> statisticsEntities = new LinkedList<>();
             for (CompanyEntity company : companies) {
                 StatisticsEntity statistics = restTemplate
                         .getForObject(iexApiHost + company.getSymbol() + iexApiKey, StatisticsEntity.class);
-                statisticsRepository.save(statistics);
+                statisticsEntities.add(statistics);
             }
+            statisticsRepository.saveAll(statisticsEntities);
         }, fixedPool);
 
     }
