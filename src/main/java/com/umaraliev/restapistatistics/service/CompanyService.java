@@ -7,10 +7,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
+import sun.net.www.http.HttpClient;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -32,6 +37,7 @@ public class CompanyService {
 
     ExecutorService fixedPool = Executors.newFixedThreadPool(8);
 
+    @Async
     public void saveCompanyDetails() {
         CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
             ResponseEntity<List<CompanyEntity>> rateResponse =

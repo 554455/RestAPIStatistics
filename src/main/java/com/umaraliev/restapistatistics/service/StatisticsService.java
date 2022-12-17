@@ -5,14 +5,13 @@ import com.umaraliev.restapistatistics.model.StatisticsEntity;
 import com.umaraliev.restapistatistics.repository.StatisticsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,7 +26,10 @@ public class StatisticsService {
 
     private final StatisticsRepository statisticsRepository;
     private final CompanyService companyService;
+
     private final RestTemplate restTemplate;
+
+    private final WebClient webClient;
 
     @Value("${iex.api.host.statistics}")
     private String iexApiHost;
@@ -37,18 +39,20 @@ public class StatisticsService {
 
     ExecutorService fixedPool = Executors.newFixedThreadPool(8);
 
+
     public void saveStatisticsDetails() {
         CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(() -> {
             List<CompanyEntity> companies = companyService.listAll();
             List<StatisticsEntity> statisticsEntities = new LinkedList<>();
             for (CompanyEntity company : companies) {
-                StatisticsEntity statistics = restTemplate
-                        .getForObject(iexApiHost + company.getSymbol() + iexApiKey, StatisticsEntity.class);
-                statisticsEntities.add(statistics);
-            }
-            statisticsRepository.saveAll(statisticsEntities);
-        }, fixedPool);
-
+                Flux<StatisticsEntity> responseEntityFlux = webClient
+                        .get()
+                        .uri(iexApiHost + company.getSymbol() + iexApiKey)
+                        .retrieve()
+                        .bodyToFlux(StatisticsEntity.class);
+                responseEntityFlux.collectList().subscribe(statisticsEntities::addAll);
+                statisticsRepository.saveAll(statisticsEntities);
+        }}, fixedPool);
     }
 
     public List<StatisticsEntity> listAll() {
@@ -75,5 +79,4 @@ public class StatisticsService {
                 .limit(5)
                 .collect(Collectors.toList());
     }
-
 }
