@@ -11,13 +11,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
-import sun.net.www.http.HttpClient;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -38,23 +34,31 @@ public class CompanyService {
     ExecutorService fixedPool = Executors.newFixedThreadPool(8);
 
     @Async
-    public void saveCompanyDetails() {
-        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-            ResponseEntity<List<CompanyEntity>> rateResponse =
-                    restTemplate.exchange(iexApiHost + iexApiKey,
-                            HttpMethod.GET, null, new ParameterizedTypeReference<List<CompanyEntity>>() {});
-
-            List<CompanyEntity> companyList = rateResponse.getBody();
-            if(!CollectionUtils.isEmpty(companyList)) {
-                companyRepository.saveAll(companyList);
-            }
-        }, fixedPool);
+    public void saveCompanyDetails(List<CompanyEntity> companyEntities) {
+        if (!CollectionUtils.isEmpty(companyEntities)) {
+            companyRepository.saveAll(companyEntities);
+        }
     }
 
+    public List<CompanyEntity> getCompanyEntityAll(){
+        List<CompanyEntity> companyEntities = new LinkedList<>();
+            ResponseEntity<List<CompanyEntity>> rateResponse =
+                    restTemplate.exchange(iexApiHost + iexApiKey,
+                            HttpMethod.GET, null, new ParameterizedTypeReference<List<CompanyEntity>>() {
+                            });
+
+            companyEntities = rateResponse.getBody();
+            saveCompanyDetails(companyEntities);
+        return companyEntities;
+    }
     public List<CompanyEntity> listAll() {
         return companyRepository.findAll()
                 .stream()
                 .filter(c -> c != null && c.getSymbol() != null)
                 .collect(Collectors.toList());
+    }
+
+    public CompanyEntity getOneCompanyEntity(Long id) {
+        return companyRepository.findById(id).get();
     }
 }

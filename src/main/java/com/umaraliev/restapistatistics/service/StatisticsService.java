@@ -4,24 +4,23 @@ import com.umaraliev.restapistatistics.model.CompanyEntity;
 import com.umaraliev.restapistatistics.model.StatisticsEntity;
 import com.umaraliev.restapistatistics.repository.StatisticsRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.Disposable;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class StatisticsService {
 
     private final StatisticsRepository statisticsRepository;
@@ -37,22 +36,29 @@ public class StatisticsService {
     @Value("${iex.api.key.statistics}")
     private String iexApiKey;
 
-    ExecutorService fixedPool = Executors.newFixedThreadPool(8);
 
+    public void saveStatisticsDetails(List<StatisticsEntity> statisticsEntities) {
+        if (!CollectionUtils.isEmpty(statisticsEntities)) {
+            statisticsRepository.saveAll(statisticsEntities);
+        }
+    }
 
-    public void saveStatisticsDetails() {
-        CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(() -> {
-            List<CompanyEntity> companies = companyService.listAll();
-            List<StatisticsEntity> statisticsEntities = new LinkedList<>();
+    public List<StatisticsEntity> getStatisticsEntityAll() {
+        List<StatisticsEntity> statisticsEntities = new LinkedList<>();
+        List<CompanyEntity> companies = companyService.listAll();
+        CompletableFuture.runAsync(() -> {
             for (CompanyEntity company : companies) {
-                Flux<StatisticsEntity> responseEntityFlux = webClient
+                Mono<StatisticsEntity> responseEntityFlux = webClient
                         .get()
                         .uri(iexApiHost + company.getSymbol() + iexApiKey)
                         .retrieve()
-                        .bodyToFlux(StatisticsEntity.class);
-                responseEntityFlux.collectList().subscribe(statisticsEntities::addAll);
-                statisticsRepository.saveAll(statisticsEntities);
-        }}, fixedPool);
+                        .bodyToMono(StatisticsEntity.class);
+                responseEntityFlux.subscribe();
+                statisticsEntities.add(responseEntityFlux.block());
+            }
+        });
+        saveStatisticsDetails(statisticsEntities);
+        return statisticsEntities;
     }
 
     public List<StatisticsEntity> listAll() {

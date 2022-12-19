@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalTime;
-import java.util.logging.Logger;
 
 @Component
 @Async
@@ -27,14 +26,13 @@ public class ScheduledTasks {
     @Scheduled(cron = "${interval-in-get-symbol}")
     public void getSymbol() {
         log.info("INFO: Getting information " + "|" + LocalTime.now());
-        companyService.saveCompanyDetails();
+        companyService.getCompanyEntityAll();
     }
-
 
     @Scheduled(cron = "${interval-in-get-statistics}")
     public void getStatistics() {
         log.info("INFO: Getting statistics " + "|" + LocalTime.now());
-        statisticsService.saveStatisticsDetails();
+        statisticsService.getStatisticsEntityAll();
     }
 
 
