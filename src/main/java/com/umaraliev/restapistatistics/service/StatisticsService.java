@@ -16,6 +16,8 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +38,8 @@ public class StatisticsService {
     @Value("${iex.api.key.statistics}")
     private String iexApiKey;
 
+    ExecutorService fixedPool = Executors.newFixedThreadPool(8);
+
 
     public void saveStatisticsDetails(List<StatisticsEntity> statisticsEntities) {
         if (!CollectionUtils.isEmpty(statisticsEntities)) {
@@ -53,10 +57,9 @@ public class StatisticsService {
                         .uri(iexApiHost + company.getSymbol() + iexApiKey)
                         .retrieve()
                         .bodyToMono(StatisticsEntity.class);
-                responseEntityFlux.subscribe();
-                statisticsEntities.add(responseEntityFlux.block());
+                responseEntityFlux.subscribe(statisticsEntities::add);
             }
-        });
+        }, fixedPool);
         saveStatisticsDetails(statisticsEntities);
         return statisticsEntities;
     }
